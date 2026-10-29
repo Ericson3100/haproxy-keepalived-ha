@@ -1,0 +1,101 @@
+name: haproxy-ha-demo
+
+# Two HAProxy nodes sharing two Keepalived virtual IPs (active/active),
+# five dummy backends and a client container to test from inside the network.
+
+x-lb: &lb
+  build: ./demo
+  image: haproxy-keepalived-demo:local
+  restart: unless-stopped
+  cap_add: [NET_ADMIN, NET_BROADCAST, NET_RAW]
+  # Values are read from .env (see .env.example); defaults are demo-only.
+  environment: &lb-env
+    STATS_VIEWER_USER: ${STATS_VIEWER_USER:-viewer}
+    STATS_VIEWER_PASSWORD: ${STATS_VIEWER_PASSWORD:-change-me-viewer}
+    STATS_ADMIN_USER: ${STATS_ADMIN_USER:-admin}
+    STATS_ADMIN_PASSWORD: ${STATS_ADMIN_PASSWORD:-change-me-admin}
+    DEMO_DOMAIN: example.com
+  volumes:
+    - ./demo/haproxy/haproxy.cfg:/etc/haproxy/haproxy.cfg:ro
+    - ./bare-metal/etc/haproxy/errors:/etc/haproxy/errors:ro
+  healthcheck:
+    test: ["CMD", "curl", "-fsk", "-o", "/dev/null", "https://127.0.0.1/", "-H", "Host: app1.example.com"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+  depends_on: [app1-a, app1-b, app2-a, api-1, api-2]
+
+services:
+  lb1:
+    <<: *lb
+    hostname: lb1
+    environment:
+      <<: *lb-env
+      LB_NODE_NAME: lb1
+    volumes:
+      - ./demo/haproxy/haproxy.cfg:/etc/haproxy/haproxy.cfg:ro
+      - ./bare-metal/etc/haproxy/errors:/etc/haproxy/errors:ro
+      - ./demo/keepalived/lb1.conf:/config/keepalived.conf:ro
+    networks:
+      lbnet:
+        ipv4_address: 10.77.0.11
+    ports:
+      - "8080:80"
+      - "8443:443"
+      - "8404:8404"
+      - "8405:8405"
+
+  lb2:
+    <<: *lb
+    hostname: lb2
+    environment:
+      <<: *lb-env
+      LB_NODE_NAME: lb2
+    volumes:
+      - ./demo/haproxy/haproxy.cfg:/etc/haproxy/haproxy.cfg:ro
+      - ./bare-metal/etc/haproxy/errors:/etc/haproxy/errors:ro
+      - ./demo/keepalived/lb2.conf:/config/keepalived.conf:ro
+    networks:
+      lbnet:
+        ipv4_address: 10.77.0.12
+    ports:
+      - "9080:80"
+      - "9443:443"
+      - "9404:8404"
+      - "9405:8405"
+
+  # Dummy backends: traefik/whoami echoes the container name, which makes
+  # round-robin / least-conn balancing visible.
+  app1-a: &whoami
+    image: traefik/whoami:v1.11.0
+    hostname: app1-a
+    networks: [lbnet]
+  app1-b:
+    <<: *whoami
+    hostname: app1-b
+  app2-a:
+    <<: *whoami
+    hostname: app2-a
+  api-1:
+    <<: *whoami
+    hostname: api-1
+  api-2:
+    <<: *whoami
+    hostname: api-2
+
+  # Test client living on the same L2 network as the VIPs
+  client:
+    image: curlimages/curl:8.15.0
+    entrypoint: ["sleep", "infinity"]
+    volumes:
+      - ./scripts:/scripts:ro
+    networks:
+      lbnet:
+        ipv4_address: 10.77.0.50
+
+networks:
+  lbnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.77.0.0/24
