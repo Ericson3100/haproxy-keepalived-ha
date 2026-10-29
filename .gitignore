@@ -1,0 +1,17 @@
+# Local secrets / environment
+.env
+*.env
+!.env.example
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
