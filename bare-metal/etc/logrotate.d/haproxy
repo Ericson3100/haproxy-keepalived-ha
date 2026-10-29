@@ -1,0 +1,13 @@
+/var/log/haproxy/*.log /var/log/haproxy/hosts/*/*.log {
+    # Rotate daily, keep 7 rotations (e.g. 7 in production, 31 in test)
+    daily
+    rotate 7
+    # No error if the log is missing; skip empty logs
+    missingok
+    notifempty
+    # Compress rotated logs, but keep the most recent rotation uncompressed
+    compress
+    delaycompress
+    # Copy then truncate in place, so the daemon does not need a reload
+    copytruncate
+}

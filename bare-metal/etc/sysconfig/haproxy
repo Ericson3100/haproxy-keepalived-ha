@@ -1,0 +1,4 @@
+# Extra options for the haproxy daemon (read by haproxy.service).
+# Useful e.g. to add more configuration files with additional -f options.
+# See haproxy(1) for the complete list of options.
+OPTIONS=""

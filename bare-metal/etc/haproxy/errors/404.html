@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 - Page not found</title>
+<style>
+    body {
+        margin: 0;
+        background: #ffffff;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: #333333;
+    }
+    .box {
+        text-align: center;
+        max-width: 550px;
+        padding: 40px;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .code { font-size: 48px; font-weight: bold; color: #d9534f; margin-bottom: 10px; }
+    h1 { font-size: 28px; margin: 0 0 15px; color: #d9534f; }
+    p { font-size: 16px; line-height: 1.5; margin: 10px 0 0; }
+    .host { font-weight: bold; color: #0061a8; }
+</style>
+</head>
+<body>
+<div class="box">
+    <div class="code">404</div>
+    <h1>Page not found</h1>
+    <p>No service is published for <span class="host">%[req.hdr(Host)]</span>.</p>
+    <p>Please check the URL and try again, or contact the platform administrator.</p>
+</div>
+</body>
+</html>

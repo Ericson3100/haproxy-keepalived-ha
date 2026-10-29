@@ -1,0 +1,20 @@
+[Unit]
+Description=HAProxy Load Balancer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment="CONFIG=/etc/haproxy/haproxy.cfg" "PIDFILE=/run/haproxy.pid" "CFGDIR=/etc/haproxy/conf.d"
+EnvironmentFile=-/etc/sysconfig/haproxy
+# Master-worker mode with systemd notify support (-Ws)
+ExecStart=/usr/sbin/haproxy -Ws -f $CONFIG -f $CFGDIR -p $PIDFILE $OPTIONS
+# Validate first; only reload (USR2, seamless) when the config is valid
+ExecReload=/usr/sbin/haproxy -f $CONFIG -f $CFGDIR -c -q $OPTIONS
+ExecReload=/bin/kill -USR2 $MAINPID
+SuccessExitStatus=143
+KillMode=mixed
+Type=notify
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
